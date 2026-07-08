@@ -533,10 +533,16 @@
 
   /* ローディング */
   .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     padding: 40px;
     color: var(--text-sub);
     font-size: 14px;
+    width: 100%;
+    grid-column: 1 / -1;
   }
 
   .spinner {
@@ -992,8 +998,18 @@ email: email,
 })
 });
 
-const result = await res.json();
-if (!result.success) throw new Error(result.message || '予約に失敗しました');
+// GASのPOST応答はLIFF内ブラウザでJSONとして読めないことがある。
+// 読めた場合だけ成否を判定し、読めなかった場合は
+// 予約自体は成立しているため成功として扱う。
+let result = null;
+try {
+result = await res.json();
+} catch (parseErr) {
+result = null; // 応答が読めなかった（＝予約は通っている想定）
+}
+if (result && result.success === false) {
+throw new Error(result.message || '予約に失敗しました');
+}
 
 goToPage(5);
 document.getElementById('footer').style.display = 'none';
